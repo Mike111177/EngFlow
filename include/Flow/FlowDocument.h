@@ -13,8 +13,11 @@ namespace Flow {
 		std::vector<Resource> resources;
 		std::filesystem::path tempFolder;
 		std::filesystem::path filePath;
+		bool spawnTempDir();
+		bool destroyTempDir();
 		bool _isOpen = false;
 		bool pathSet = false;
+		bool tempDirSpawned = false;
 	public:
 		FlowDocument();
 		FlowDocument(std::filesystem::path const &name);

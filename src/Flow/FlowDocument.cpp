@@ -4,16 +4,10 @@
 
 #include <pugixml.hpp>
 #include <minizip/zip.h>
+#include <minizip/unzip.h>
 #include <minizip/mz_strm_zlib.h>
 
 #include <Flow/FlowDocument.h>
-
-#ifdef _MSC_VER
-#pragma comment(lib, "minizip.lib")
-#pragma comment(lib, "zlibstaticd.lib")
-#pragma comment(lib, "pugixml.lib")
-#endif
-
 
 static const char alphanum[] =
 "0123456789"
@@ -36,18 +30,24 @@ std::filesystem::path getNewTempFolder() {
 	return tpath;
 }
 
-Flow::FlowDocument::FlowDocument(): tempFolder(getNewTempFolder()) {
-	auto s = std::filesystem::create_directory(tempFolder);
-#ifdef _DEBUG
-	std::cout << (s ? "Successfully created temporary folder: " 
-		            : "Failed to create temporary folder: ")
-		      << tempFolder << std::endl;
-#endif
+bool Flow::FlowDocument::spawnTempDir() {
+	destroyTempDir();
+	return tempDirSpawned = std::filesystem::create_directory(tempFolder = getNewTempFolder());
 }
+
+bool Flow::FlowDocument::destroyTempDir() {
+	if (tempDirSpawned && std::filesystem::exists(tempFolder)) {
+		std::filesystem::remove_all(tempFolder);
+	}
+	tempDirSpawned = false;
+	return true;
+}
+
+Flow::FlowDocument::FlowDocument() {}
 
 Flow::FlowDocument::FlowDocument(std::filesystem::path const &name): FlowDocument() {setName(name);}
 
-Flow::FlowDocument::~FlowDocument() {}
+Flow::FlowDocument::~FlowDocument() { close(); }
 
 bool Flow::FlowDocument::create() {
 	index.reset();
@@ -64,6 +64,7 @@ bool Flow::FlowDocument::create() {
 
 bool Flow::FlowDocument::open() {
 	if (!pathSet) throw std::runtime_error("Document has no path given to load from");
+	spawnTempDir();
 	_isOpen = true;
 	return _isOpen;
 }
@@ -119,6 +120,8 @@ bool Flow::FlowDocument::saveAs(std::filesystem::path const& name) {
 }
 
 void Flow::FlowDocument::close() {
-	std::filesystem::remove_all(tempFolder);
+	if (_isOpen) {
+		destroyTempDir();
+	}
 	_isOpen = false;
 }
