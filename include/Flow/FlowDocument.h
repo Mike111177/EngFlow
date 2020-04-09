@@ -9,7 +9,7 @@ namespace Flow {
 	class FlowDocument {
 		struct Resource {};
 		pugi::xml_document index;
-		std::vector<Modules> modules;
+		//std::vector<Modules> modules;
 		std::vector<Resource> resources;
 		std::filesystem::path tempFolder;
 		std::filesystem::path filePath;
