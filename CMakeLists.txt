@@ -19,8 +19,7 @@ link_libraries(${GLEW_LIBRARIES}
 			   ${SDL2MAIN_LIBRARY}
 			   ${SDL2_LIBRARY})
 
-include_directories(${PROJECT_SOURCE_DIR}/include 
-	                ${SDL2_INCLUDE_DIR}
+include_directories(${SDL2_INCLUDE_DIR}
 	                ${GLEW_INCLUDE_DIRS}
 	                ${GLM_INCLUDE_DIR}
 	                ${FREETYPE_INCLUDE_DIRS}
@@ -28,6 +27,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include
 	                ${MINIZIP_INCLUDE_DIR})
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE HEADER_FILES ${PROJECT_SOURCE_DIR}/include/*.h)
 
-add_executable(EngFlow ${SRC_FILES})
+add_executable(EngFlow ${SRC_FILES} ${HEADER_FILES})
+target_include_directories(EngFlow PRIVATE ${PROJECT_SOURCE_DIR}/include )
 
