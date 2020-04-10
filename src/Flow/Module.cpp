@@ -41,3 +41,19 @@ void Flow::Module::connectPorts(std::shared_ptr<Port>& a, std::shared_ptr<Port>&
 bool Flow::Port::isConnected() {
 	return link.use_count()>1;
 }
+
+Flow::Block::Logic::Logic(std::weak_ptr<Block> b): _block(b) {}
+
+std::shared_ptr<Flow::Block> Flow::Block::Logic::block() {
+	return _block.lock();
+}
+
+Flow::Block::Logic::~Logic() {}
+
+std::unique_ptr<Flow::Block::Logic> const& Flow::Block::logic() {
+	return _logic;
+}
+
+Flow::Block::Block(std::unique_ptr<Logic>& logic): _logic(std::move(logic)) {}
+
+Flow::Block::Block() {}

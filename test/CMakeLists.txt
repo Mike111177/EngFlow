@@ -17,9 +17,19 @@ ExternalProject_Add(
 ExternalProject_Get_Property(doctest source_dir)
 set(DOCTEST_INCLUDE_DIR ${source_dir}/doctest CACHE INTERNAL "Path to include folder for doctest")
 
-add_executable(FlowTest test.cpp)
+set(TEST_SOURCES testMain.cpp testFlowDocument.cpp)
+set(TEST_LIBS Flow)
+
+#Determine Additional Availible Tests
+if (FLOW_BUILD_LUABLOCK) #LuaBlock
+    list(APPEND TEST_SOURCES testLuaBlock.cpp)
+    list(APPEND TEST_LIBS LuaBlock)
+endif()
+
+add_executable(FlowTest ${TEST_SOURCES})
+target_link_libraries(FlowTest ${TEST_LIBS})
+#Add doctest
 target_include_directories(FlowTest PUBLIC ${DOCTEST_INCLUDE_DIR})
-target_link_libraries(FlowTest Flow)
 add_dependencies(FlowTest doctest)
 
 add_test(NAME RunFlowTest 

@@ -1,9 +1,11 @@
 #pragma once
+#include <iostream>
 #include <vector>
 #include <optional>
 #include <memory>
 
 namespace Flow {
+	class Block;
 	struct Link;
 	struct Port {
 		std::shared_ptr<Link> link;
@@ -12,7 +14,26 @@ namespace Flow {
 	struct Link {
 		std::vector<std::weak_ptr<Port>> ports;
 	};
-	struct Block {
+	class Block final{
+	public:
+		template<class T, class... Args>
+		static std::shared_ptr<Block> create(Args... args) {
+			std::shared_ptr<Block> ptr(new Block);
+			*ptr = Block(std::unique_ptr<Logic>(new T(ptr, args...)));
+			return ptr;
+		}
+		class Logic {
+			const std::weak_ptr<Block> _block;
+		public:
+			Logic(std::weak_ptr<Block>);
+			std::shared_ptr<Block> block();
+			virtual ~Logic();
+		};
+		std::unique_ptr<Logic> const& logic();
+	private:
+		std::unique_ptr<Logic> _logic;
+		Block(std::unique_ptr<Logic>& logic);
+		Block();
 		std::vector<std::shared_ptr<Port>> ports;
 	};
 	class Module {

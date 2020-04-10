@@ -1,8 +1,6 @@
-#include <filesystem>
-
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
+#include <filesystem>
 #include <Flow/FlowDocument.h>
 
 TEST_CASE("FlowDocument no name errors.") {
