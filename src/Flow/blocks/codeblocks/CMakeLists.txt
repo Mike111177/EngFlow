@@ -4,7 +4,7 @@ set(FLOW_CODEBLOCKS_HEADER_DIR ${PROJECT_SOURCE_DIR}/include/Flow/blocks/codeblo
 # Lua Block
 option(FLOW_BUILD_LUABLOCK "Build Lua Programming Block" ON)
 if (${FLOW_BUILD_LUABLOCK})
-	find_package(Lua)
+	find_package(Lua REQUIRED)
 
 	add_library(LuaBlock LuaBlock.cpp ${FLOW_CODEBLOCKS_HEADER_DIR}/LuaBlock.h)
 	
@@ -12,4 +12,17 @@ if (${FLOW_BUILD_LUABLOCK})
 	target_link_libraries(LuaBlock ${LUA_LIBRARY})
 	
 	list(APPEND FLOW_BUILT_BLOCKS LuaBlock)
+endif()
+
+# Python Block
+option(FLOW_BUILD_PYTHONBLOCK "Build Python Programming Block" ON)
+if (${FLOW_BUILD_PYTHONBLOCK})
+	find_package(Python3 REQUIRED 
+		         COMPONENTS Interpreter Development)
+
+	add_library(PythonBlock PythonBlock.cpp ${FLOW_CODEBLOCKS_HEADER_DIR}/PythonBlock.h)
+	target_include_directories(PythonBlock PRIVATE ${FLOW_INCLUDE_DIR} ${Python3_INCLUDE_DIRS})
+	target_link_libraries(PythonBlock ${Python3_LIBRARIES})
+	
+	list(APPEND FLOW_BUILT_BLOCKS PythonBlock)
 endif()

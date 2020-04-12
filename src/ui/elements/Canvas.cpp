@@ -1,5 +1,3 @@
-#include <GL/glew.h>
-
 #include <ui/elements/Canvas.h>
 
 namespace EngFlow {

@@ -1,5 +1,6 @@
 #include <iostream>
-#include <ui\opengl\Font.h>
+
+#include <Font.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H  

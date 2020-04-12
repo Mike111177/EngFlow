@@ -11,10 +11,13 @@ TEST_CASE("LuaBlock common block requirements") {
 	SUBCASE("Block logic pointer agrees with logic block logic ptr") {
 		CHECK(block->logic() == block->logic()->block()->logic());
 	}
+	auto ptr = block->logic().get();
+	auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
 	SUBCASE("Block logic is actually a luablock") {
-		auto ptr = block->logic().get();
-		auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
 		CHECK(luaLogic != nullptr);
+	}
+	SUBCASE("Throws when trying to execute before supplying code") {
+		CHECK_THROWS(luaLogic->execute());
 	}
 }
 

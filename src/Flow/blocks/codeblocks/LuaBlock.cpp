@@ -13,20 +13,25 @@ extern "C"
 
 struct Flow::LuaBlockIMPL {
 	lua_State* luaState;
+	bool ready;
 };
 
 Flow::LuaBlock::LuaBlock(std::weak_ptr<Block> p) :
 AbstractCodeBlock(p), 
-impl(new LuaBlockIMPL{ luaL_newstate() }) {
+impl(new LuaBlockIMPL{ luaL_newstate(), false }) {
 	luaL_openlibs(impl->luaState);
 }
 
-void Flow::LuaBlock::execute() {
-	luaL_dostring(impl->luaState, source.c_str());
-	
+size_t Flow::LuaBlock::nparams() {
+	return 0;
 }
 
-void Flow::LuaBlock::precompile() {}
+void Flow::LuaBlock::execute() {
+	if (!impl->ready) throw "This Luablock is not ready yet!";
+	luaL_dostring(impl->luaState, source.c_str());
+}
+
+void Flow::LuaBlock::precompile() { impl->ready = true; }
 
 Flow::LuaBlock::~LuaBlock() {
 	lua_close(impl->luaState);

@@ -10,8 +10,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
-#include <ui\opengl\Shader.h>
-#include <ui\opengl\Font.h>
+#include <Shader.h>
+#include <Font.h>
 
 #include <ui\primitives\Text.h>
 

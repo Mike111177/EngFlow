@@ -9,6 +9,7 @@ namespace Flow{
 		std::string source;
 	public:
 		using Logic::Logic;
+		virtual size_t nparams() = 0;
 		virtual void execute() = 0;
 		virtual void precompile() = 0;
 		void setSource(std::string);

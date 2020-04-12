@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include <ui/opengl/Shader.h>
+#include <Shader.h>
 
 GLUtil::Shader::Shader(): shaderid(NULL), compiled(false){}
 
