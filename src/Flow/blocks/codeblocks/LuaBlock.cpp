@@ -20,13 +20,14 @@ Flow::LuaBlock::LuaBlock(std::weak_ptr<Block> p) :
 AbstractCodeBlock(p), 
 impl(new LuaBlockIMPL{ luaL_newstate(), false }) {
 	luaL_openlibs(impl->luaState);
+	sourceExt = ".py";
 }
 
 size_t Flow::LuaBlock::nparams() {
 	return 0;
 }
 
-void Flow::LuaBlock::execute() {
+Flow::FlowVar Flow::LuaBlock::execute(std::vector<FlowVar> args) {
 	if (!impl->ready) throw "This Luablock is not ready yet!";
 	luaL_dostring(impl->luaState, source.c_str());
 }

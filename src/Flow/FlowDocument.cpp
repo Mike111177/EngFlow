@@ -64,6 +64,22 @@ bool Flow::FlowDocument::create() {
 
 bool Flow::FlowDocument::open() {
 	if (!pathSet) throw std::runtime_error("Document has no path given to load from");
+	//Load zip file zip
+	//Read index.xml
+	//node m = "Modules"
+	//for every c in m
+		//folder = c.attr("name")
+	    //auto currMod = new Module();
+	    //modules.push_back(currMod);
+	    //Read modules/folder/moduledata.xml
+		//node b = "Blocks"
+		//for cb in b
+			//name = cb.attr("name")
+			//blocktype = cb.attr("type")
+	        //DataReader dr(zip, Resources/blocks/module_folder/name)
+	        //auto block = Flow::Block::create(blocktype);
+	        //block->load(dr);
+	        //currMod->addBlock(block)
 	spawnTempDir();
 	_isOpen = true;
 	return _isOpen;

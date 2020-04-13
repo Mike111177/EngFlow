@@ -1,5 +1,8 @@
 #include <Flow\Module.h>
 
+
+std::unordered_map<std::string, decltype(&Flow::Block::create<Flow::Block::Logic>)> Flow::Block::Registry;
+
 void Flow::Module::connectPorts(std::shared_ptr<Port>& a, std::shared_ptr<Port>& b) {
 
 	if (!a->isConnected() && !b->isConnected()) {
@@ -49,6 +52,15 @@ std::shared_ptr<Flow::Block> Flow::Block::Logic::block() {
 }
 
 Flow::Block::Logic::~Logic() {}
+
+std::optional<std::shared_ptr<Flow::Block>> Flow::Block::create(std::string type) {
+	auto it = Registry.find(type);
+	if (it == Registry.end()) {
+		return std::nullopt;
+	} else {
+		return (*it).second();
+	}
+}
 
 std::unique_ptr<Flow::Block::Logic> const& Flow::Block::logic() {
 	return _logic;

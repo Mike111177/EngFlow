@@ -3,6 +3,9 @@
 #include <vector>
 #include <optional>
 #include <memory>
+#include <utility>
+#include <unordered_map>
+#include <functional>
 
 namespace Flow {
 	class Block;
@@ -16,12 +19,13 @@ namespace Flow {
 	};
 	class Block final{
 	public:
-		template<class T, class... Args>
-		static std::shared_ptr<Block> create(Args... args) {
+		template<class T>
+		static std::shared_ptr<Block> create() {
 			std::shared_ptr<Block> ptr(new Block);
-			*ptr = Block(std::unique_ptr<Logic>(new T(ptr, args...)));
+			*ptr = Block(std::unique_ptr<Logic>(new T(ptr)));
 			return ptr;
 		}
+		static std::optional<std::shared_ptr<Block>> create(std::string type);
 		class Logic {
 			const std::weak_ptr<Block> _block;
 		public:
@@ -30,6 +34,7 @@ namespace Flow {
 			virtual ~Logic();
 		};
 		std::unique_ptr<Logic> const& logic();
+		static std::unordered_map<std::string, decltype(&Flow::Block::create<Flow::Block::Logic>)> Registry;
 	private:
 		std::unique_ptr<Logic> _logic;
 		Block(std::unique_ptr<Logic>& logic);

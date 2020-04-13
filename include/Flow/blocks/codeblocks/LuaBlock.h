@@ -8,7 +8,7 @@ namespace Flow{
 	public:
 		LuaBlock(std::weak_ptr<Block> p);
 		virtual size_t nparams() override;
-		virtual void execute() override;
+		virtual FlowVar execute(std::vector<FlowVar>) override;
 		virtual void precompile() override;
 		~LuaBlock();
 	};
