@@ -3,45 +3,9 @@
 #include <random>
 
 #include <pugixml.hpp>
-#include <minizip/zip.h>
-#include <minizip/unzip.h>
-#include <minizip/mz_strm_zlib.h>
+#include <zip.h>
 
 #include <Flow/FlowDocument.h>
-
-static const char alphanum[] =
-"0123456789"
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-"abcdefghijklmnopqrstuvwxyz";
-static std::default_random_engine rgen;
-static std::uniform_int_distribution<size_t> alnumd(0, sizeof(alphanum) - 1);
-
-inline std::string randStr(size_t const &len) {
-	std::string ret;
-	ret.resize(len);
-	for (auto& c : ret) c = alphanum[alnumd(rgen)];
-	return ret;
-}
-
-std::filesystem::path getNewTempFolder() {
-	using namespace std::filesystem;
-	path tpath;
-	do { tpath = temp_directory_path()/randStr(10); } while (exists(tpath));
-	return tpath;
-}
-
-bool Flow::FlowDocument::spawnTempDir() {
-	destroyTempDir();
-	return tempDirSpawned = std::filesystem::create_directory(tempFolder = getNewTempFolder());
-}
-
-bool Flow::FlowDocument::destroyTempDir() {
-	if (tempDirSpawned && std::filesystem::exists(tempFolder)) {
-		std::filesystem::remove_all(tempFolder);
-	}
-	tempDirSpawned = false;
-	return true;
-}
 
 Flow::FlowDocument::FlowDocument() {}
 
@@ -49,38 +13,60 @@ Flow::FlowDocument::FlowDocument(std::filesystem::path const &name): FlowDocumen
 
 Flow::FlowDocument::~FlowDocument() { close(); }
 
-bool Flow::FlowDocument::create() {
-	index.reset();
-	auto rootNode = index.append_child("FlowIndex");
-	rootNode.append_attribute("version") = "0.0.1";
-	auto modules = rootNode.append_child("Modules");
-	auto mainModule = modules.append_child("Module");
-	mainModule.append_attribute("id") = "main";
-	rootNode.append_child("Resources");
-
-	_isOpen = true;
-	return false;
-}
-
 bool Flow::FlowDocument::open() {
+	close();
 	if (!pathSet) throw std::runtime_error("Document has no path given to load from");
-	//Load zip file zip
-	//Read index.xml
-	//node m = "Modules"
-	//for every c in m
-		//folder = c.attr("name")
-	    //auto currMod = new Module();
-	    //modules.push_back(currMod);
-	    //Read modules/folder/moduledata.xml
-		//node b = "Blocks"
-		//for cb in b
-			//name = cb.attr("name")
-			//blocktype = cb.attr("type")
-	        //DataReader dr(zip, Resources/blocks/module_folder/name)
-	        //auto block = Flow::Block::create(blocktype);
-	        //block->load(dr);
-	        //currMod->addBlock(block)
-	spawnTempDir();
+	int err = 0;
+	//Open Zip Folder
+	zip_t* zf = zip_open(filePath.string().c_str(), ZIP_RDONLY, &err);
+	if (err) {
+		zip_error_t zerr;
+		zip_error_init_with_code(&zerr, err);
+		std::cerr << "Could not open file: " << filePath << std::endl 
+			      << "\tReason: " << zip_error_strerror(&zerr) << std::endl;
+		return _isOpen = false;
+	}
+	
+	//Find and load index.xml
+	zip_stat_t sb;
+	zip_stat_init(&sb);
+	zip_stat(zf, "index.xml", 0, &sb);
+	auto indexFile = zip_fopen_index(zf, sb.index, 0);
+	std::unique_ptr<char[]> indexBuf(new char[sb.size]);
+	zip_fread(indexFile, indexBuf.get(), sb.size);
+	pugi::xml_document index;
+	index.load_buffer(indexBuf.get(), sb.size);
+
+	auto globalBlocksX = index.select_node("FlowIndex/GlobalBlocks");
+	if (globalBlocksX) {
+		for (auto& blockX : globalBlocksX.node().children()) {
+			std::string name = blockX.attribute("name").value();
+			std::string type = blockX.attribute("type").value();
+			auto blockOpt = Flow::Block::create(type);
+			if (blockOpt) {
+				auto block = blockOpt.value();
+				FlowResourceList resources;
+				for (auto& resX : blockX.children()) {
+					std::string resName = resX.attribute("name").value();
+					std::string resPath = resX.attribute("location").value();
+					zip_stat_t sbr;
+					zip_stat_init(&sbr);
+					zip_stat(zf, resPath.c_str(), 0, &sbr);
+					if (!sbr.valid) throw std::runtime_error("Could not find resource with name (" + resName + "): " + resPath);
+
+					auto indexFile = zip_fopen_index(zf, sbr.index, 0);
+					std::unique_ptr<char[]> indexBuf(new char[sbr.size]);				
+					zip_fread(indexFile, indexBuf.get(), sbr.size);
+					
+					resources.push_back({ resName, {indexBuf.get(), indexBuf.get() + sbr.size} });
+				}
+				block->name = name;
+				block->logic()->loadResources(resources);
+				globalBlocks.push_back(block);
+			}
+		}
+	}
+	zip_close(zf);
 	_isOpen = true;
 	return _isOpen;
 }
@@ -101,22 +87,66 @@ void Flow::FlowDocument::setName(std::filesystem::path const& name) {
 
 bool Flow::FlowDocument::save() {
 	if (!pathSet) throw std::runtime_error("Document has no path given to save to");
-	//Prepare Index File
-	std::ostringstream docOut;
-	index.save(docOut);
-	std::string doc = docOut.str();
-
+	//List of buffers to clear later to make LibZip happy
+	std::vector<std::unique_ptr<char[]>> buffers; 
+	int err = 0;
 	//Open Zip Folder
-	zip_fileinfo zfi = { 0 };
-	zipFile zf = zipOpen(filePath.string().c_str(), APPEND_STATUS_CREATE);
+	zip_error_t zerr;
+	zip_error_init(&zerr);
+	//Open zip
+	zip_t* zf = zip_open(filePath.string().c_str(), ZIP_CREATE | ZIP_TRUNCATE, &err);
+	if (err) {
+		zip_error_init_with_code(&zerr, err);
+		std::cerr << "Could not open file: " << filePath << std::endl
+		          << "\tReason: " << zip_error_strerror(&zerr) << std::endl;
+		return false;
+	}
+	//Prepare Index
+	pugi::xml_document index;
+	auto rootNode = index.append_child("FlowIndex");
+	rootNode.append_attribute("version") = "0.0.1";
+
+	//Process GlobalBlockData
+	if (globalBlocks.size() > 0) {
+		auto GlobalBlocks = rootNode.append_child("GlobalBlocks");
+		for (auto& block : globalBlocks) {
+			//Add block info to index xml tree
+			auto blockX = GlobalBlocks.append_child("GlobalBlocks");
+			blockX.append_attribute("name") = block->name.c_str();
+			blockX.append_attribute("type") = block->getType().c_str();
+			//Ask the block what files it wants to save
+			auto resources = block->logic()->getResources();
+			if (resources.size() > 0) {
+				for (auto& res : resources) {
+					std::string p = "blocks/" + block->name + "/" + res.name;
+					//C people are weird
+					auto data = res.data.data(); 
+					auto size = res.data.size();
+					//Need to save the data (from a vector<char>) or else res will go out of scope
+					//And libzip doesn't actually read the data until zip_close
+					buffers.push_back(std::make_unique<char[]>(size));
+					std::copy(data, data + size, buffers.back().get());
+					//Add to zip
+					auto resSource = zip_source_buffer(zf, buffers.back().get(), size, 0);
+					zip_file_add(zf, p.c_str(), resSource, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8);
+					//Add to xml index
+					auto resEntry = blockX.append_child("Resource");
+					resEntry.append_attribute("name") = res.name.c_str();
+					resEntry.append_attribute("location") = p.c_str();
+				}
+			}
+		}
+	}
 
 	//Add Index
-	zipOpenNewFileInZip(zf, "index.xml", &zfi, NULL, 0, NULL, 0, NULL, 8, -1);
-	zipWriteInFileInZip(zf, doc.data(), doc.size());
-	zipCloseFileInZip(zf);
+	std::ostringstream docOut;
+	index.save(docOut);
+	auto docStr = docOut.str();
+	auto indexSource = zip_source_buffer_create(docStr.c_str(), docStr.size(), 0, 0);
+	zip_file_add(zf, "index.xml", indexSource, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8);
 
-	//Close Zip
-	zipClose(zf, NULL);
+	//Close file
+	zip_close(zf);
 	return true;
 }
 
@@ -136,8 +166,6 @@ bool Flow::FlowDocument::saveAs(std::filesystem::path const& name) {
 }
 
 void Flow::FlowDocument::close() {
-	if (_isOpen) {
-		destroyTempDir();
-	}
+	globalBlocks.clear();
 	_isOpen = false;
 }

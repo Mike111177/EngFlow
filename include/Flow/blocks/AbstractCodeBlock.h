@@ -2,7 +2,7 @@
 #include <string>
 
 #include <Flow/FlowTypes.h>
-#include <Flow/Module.h>
+#include <Flow/Block.h>
 
 namespace Flow{
 	class AbstractCodeBlock : public Block::Logic {
@@ -15,6 +15,8 @@ namespace Flow{
 		using Logic::Logic;
 		void load();
 		void save();
+		virtual FlowResourceList getResources() override;
+		virtual void loadResources(FlowResourceList&) override;
 		virtual size_t nparams() = 0;
 		virtual FlowVar execute(std::vector<FlowVar>) = 0;
 		virtual void precompile() = 0;

@@ -1,5 +1,7 @@
 #include "doctest.h"
+#include <filesystem>
 
+#include <Flow/FlowDocument.h>
 #include <Flow/CorePlugin.h>
 #include <Flow/blocks/codeblocks/PythonBlock.h>
 
@@ -89,4 +91,34 @@ def doubleNum(a):
 		auto result = pyLogic->execute({ pyLogic->execute({ 3 }) });
 		CHECK(std::get<long>(result) == 12);
 	}
+}
+
+TEST_CASE("PythonBlock saving/loading test") {
+	initCoreComponents();
+	std::filesystem::path path = "TestFlowPythonDocument.zip";
+	// If the file already exist, this test would be pretty meaningless
+	if (std::filesystem::exists(path)) { std::filesystem::remove(path); }
+	CHECK(!std::filesystem::exists(path));
+
+	Flow::FlowDocument testDoc(path);
+	{
+		auto block = Flow::Block::create("PythonBlock").value();
+		auto pyLogic = dynamic_cast<Flow::PythonBlock*>(block->logic().get());
+		auto source = R"(
+def verify():
+  return "I made it!"
+)";
+		pyLogic->setSource(source);
+		block->name = "TestBlock";
+		testDoc.globalBlocks.push_back(block);
+	}
+	testDoc.save();
+	testDoc.close();
+	testDoc.open();
+	CHECK(testDoc.globalBlocks.size()==1);
+	auto ptr = testDoc.globalBlocks[0]->logic().get();
+	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
+	CHECK(pyLogic != nullptr);
+	auto result = pyLogic->execute({});
+	CHECK(std::get<std::string>(result) == "I made it!");
 }

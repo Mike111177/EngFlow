@@ -6,6 +6,7 @@ namespace Flow {
 	class PythonBlock : public AbstractCodeBlock {
 		std::unique_ptr<PythonBlockIMPL> impl;
 	public:
+		static const std::string LogicType;
 		PythonBlock(std::weak_ptr<Block> p);
 		virtual size_t nparams() override;
 		virtual FlowVar execute(std::vector<FlowVar>) override;

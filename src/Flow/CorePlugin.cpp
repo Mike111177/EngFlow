@@ -1,4 +1,4 @@
-#include <Flow\Module.h>
+#include <Flow\Block.h>
 #include <Flow\CorePlugin.h>
 
 #include <Flow/blocks/codeblocks/LuaBlock.h>

@@ -1,9 +1,12 @@
 #include <vector>
+#include <sstream>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #include <Flow/blocks/codeblocks/PythonBlock.h>
+
+const std::string Flow::PythonBlock::LogicType = "PythonBlock";
 
 void PrintPy(PyObject* p) {
 	std::cout << PyUnicode_AsUTF8(PyObject_Repr(p)) << std::endl;
@@ -21,7 +24,7 @@ struct PyRef {
 	}
 	~PyRef() {
 		if (ptr!=nullptr && Py_IsInitialized()) {
-			Py_DecRef(ptr);
+			//Py_DecRef(ptr);
 		}
 	}
 };
@@ -34,11 +37,15 @@ PyRef PyAdopt(PyObject* ptr) {
 struct Flow2Py {
 	PyRef operator()(std::monostate m) { return PyAdopt(Py_None); }
 	PyRef operator()(long i) { return PyLong_FromLong(i); }
+	PyRef operator()(std::string s) { return PyUnicode_FromStringAndSize(s.c_str(), s.size()); }
 };
 
 Flow::FlowVar Py2Flow(PyObject* p) {
 	if (PyLong_Check(p)) {
 		return PyLong_AsLong(p);
+	} else if (PyUnicode_Check(p)) {
+		auto size = PyUnicode_GetSize(p);
+		return std::string(PyUnicode_AsUTF8(p), size);
 	}
 	return std::monostate();
 }
@@ -54,22 +61,38 @@ PyRef toTuple(C d) {
 	return tup;
 }
 
+PyObject* CatchPy(PyObject* p) {
+	PyObject* err;
+	if (p == nullptr && (err = PyErr_Occurred()) != nullptr) {
+		//PyObject* type, * value, * traceback;
+		//PyErr_Fetch(&type, &value, &traceback);
+		//PrintPy(err);
+		//auto e = PyObject_CallObject(type, value);
+		//PrintPy(e);
+		//PrintPy(PyObject_GetAttrString(e, "filename"));
+		PyErr_Print();
+		throw "Python Error";
+	}
+	return p;
+}
+
 struct Flow::PythonBlockIMPL {
 	static size_t count;
-	std::string name;
 	PyRef pFunc = nullptr;
 	size_t params;
 	PythonBlockIMPL() {
 		count++;
 		updatePythonVMState();
 	}
-	void compile(std::string &source) {
-		auto pModule = PyImport_ExecCodeModule("Test", PyRef(Py_CompileString(source.c_str(), "", Py_file_input)));
-		auto const pDict = PyModule_GetDict(pModule);
-		PyObject* pKey = nullptr, * pValue = nullptr;
+	void compile(std::string const &source, std::string const& name) {
+		PyRef byteCode(CatchPy(Py_CompileString(source.c_str(), name.c_str(), Py_file_input)));
+		auto pModule = PyImport_ExecCodeModule(name.c_str(), byteCode);
 		auto modname = std::string(PyModule_GetName(pModule));
 		//inspect.signature
 		auto inspectSignature = PyAdopt(PyDict_GetItemString(PyModule_GetDict(PyRef(PyImport_ImportModule("inspect"))), "signature"));
+
+		auto const pDict = PyModule_GetDict(pModule);
+		PyObject* pKey = nullptr, * pValue = nullptr;
 		for (Py_ssize_t i = 0; PyDict_Next(pDict, &i, &pKey, &pValue);) {
 			const char* key = PyUnicode_AsUTF8(pKey);
 			if (PyFunction_Check(pValue) &&
@@ -80,6 +103,9 @@ struct Flow::PythonBlockIMPL {
 				params = PyObject_Length(parameters);
 				break; //Only select first function to execute
 			}
+		}
+		if (pFunc == nullptr) {
+			throw "Python was unable find a function in this code";
 		}
 	}
 	~PythonBlockIMPL() { 
@@ -114,7 +140,7 @@ Flow::FlowVar Flow::PythonBlock::execute(std::vector<FlowVar> args) {
 }
 
 void Flow::PythonBlock::precompile(){
-	impl->compile(source);
+	impl->compile(source,block()->name);
 }
 
 Flow::PythonBlock::~PythonBlock() {}

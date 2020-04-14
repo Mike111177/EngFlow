@@ -1,29 +1,27 @@
+#pragma once
 #include <iostream>
 #include <filesystem>
 #include <memory>
 #include <vector>
 
-#include <pugixml.hpp>
+#include <Flow/Block.h>
 
 namespace Flow {
 	class FlowDocument {
-		struct Resource {};
-		pugi::xml_document index;
 		//std::vector<Modules> modules;
-		std::vector<Resource> resources;
-		std::filesystem::path tempFolder;
 		std::filesystem::path filePath;
+		/*std::filesystem::path tempFolder;
 		bool spawnTempDir();
 		bool destroyTempDir();
+		bool tempDirSpawned = false;*/
 		bool _isOpen = false;
 		bool pathSet = false;
-		bool tempDirSpawned = false;
 	public:
+		std::vector<std::shared_ptr<Block>> globalBlocks;
 		FlowDocument();
 		FlowDocument(std::filesystem::path const &name);
 		~FlowDocument();
 		//File Management
-		bool create();
 		bool open();
 		bool open(std::filesystem::path const& name);
 		bool isOpen();

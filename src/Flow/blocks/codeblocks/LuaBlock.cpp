@@ -11,6 +11,8 @@ extern "C"
 
 #include <Flow/blocks/codeblocks/LuaBlock.h>
 
+const std::string Flow::LuaBlock::LogicType = "LuaBlock";
+
 struct Flow::LuaBlockIMPL {
 	lua_State* luaState;
 	bool ready;

@@ -1,20 +1,27 @@
 #pragma once
+#include <string>
 #include <iostream>
 #include <variant>
+#include <vector>
+
 namespace Flow{
 	using FlowVar = std::variant<
 		std::monostate,
 		int,
-		long
-//		float,
-//		double,
-//		std::string
+		long,
+		std::string
+		//,std::vector<FlowVar> //Tuple? This is technically recursive but i think this isnt impossible to acheive... Variants are cool...
 	>;
-	struct PrintFlow {
-		void operator()(std::monostate) {}
-		void operator()(long i) { std::cout << i << std::endl; }
+
+	struct FlowResource {
+		std::string name;
+		std::vector<char> data;
 	};
-	inline void print(FlowVar v) {
-		std::visit(PrintFlow(), v);
-	}
+
+	using FlowResourceList = std::vector<FlowResource>;
 };
+
+namespace std {
+	std::string to_string(Flow::FlowVar&);
+}
+std::ostream& operator<<(std::ostream &, Flow::FlowVar&);
