@@ -29,7 +29,7 @@ size_t Flow::LuaBlock::nparams() {
 	return 0;
 }
 
-Flow::FlowVar Flow::LuaBlock::execute(std::vector<FlowVar> args) {
+Flow::FlowVar Flow::LuaBlock::execute(FlowVar args) {
 	if (!impl->ready) throw "This Luablock is not ready yet!";
 	luaL_dostring(impl->luaState, source.c_str());
 }

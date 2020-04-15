@@ -1,5 +1,6 @@
 #include <vector>
 #include <sstream>
+#include <concepts>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -34,31 +35,52 @@ PyRef PyAdopt(PyObject* ptr) {
 	return ptr;
 }
 
-struct Flow2Py {
-	PyRef operator()(std::monostate m) { return PyAdopt(Py_None); }
-	PyRef operator()(long i) { return PyLong_FromLong(i); }
+PyRef Flow2Py(Flow::FlowVar& o);
+static struct {
+	//Special
+	PyRef operator()(Flow::Empty m) { return PyAdopt(Py_None); }
+	PyRef operator()(Flow::Null m) { return PyAdopt(Py_None); }
+	//String
 	PyRef operator()(std::string s) { return PyUnicode_FromStringAndSize(s.c_str(), s.size()); }
-};
+	//Numbers
+	template <std::signed_integral T>
+	PyRef operator()(T i) { return PyLong_FromLong(i); }
+	template <std::unsigned_integral T>
+	PyRef operator()(T ui) { return PyLong_FromUnsignedLong(ui); }
+	template <std::floating_point T>
+	PyRef operator()(T d) { return PyFloat_FromDouble(d); }
+	//Arrays
+	PyRef operator()(Flow::Array d) {
+		auto s = d.size();
+		auto tup = PyTuple_New(s);
+		for (int i = 0; i < s; i++) {
+			auto o = Flow2Py(d[i]);
+			PyTuple_SET_ITEM(tup, i, o);
+		}
+		return tup;
+	}
+} flow2py;
+
+PyRef Flow2Py(Flow::FlowVar &o) {
+	return std::visit(flow2py, o);
+}
 
 Flow::FlowVar Py2Flow(PyObject* p) {
 	if (PyLong_Check(p)) {
 		return PyLong_AsLong(p);
 	} else if (PyUnicode_Check(p)) {
-		auto size = PyUnicode_GetSize(p);
+		auto size = PyUnicode_GET_LENGTH(p);
 		return std::string(PyUnicode_AsUTF8(p), size);
+	} else if (PyTuple_Check(p)) {
+		auto size = PyTuple_Size(p);
+		std::vector<Flow::FlowVar> fTup(size);
+		for (auto i = 0; i < size; i++) {
+			//Circular references will break this boy
+			fTup[i] = Py2Flow(PyTuple_GetItem(p, i));
+		}
+		return fTup;
 	}
 	return std::monostate();
-}
-
-template<class C>
-PyRef toTuple(C d) {
-	auto s = d.size();
-	auto tup = PyTuple_New(s);
-	for (int i = 0; i < s; i++) {
-		auto o = std::visit(Flow2Py(), d[i]);
-		PyTuple_SET_ITEM(tup, i, o);
-	}
-	return tup;
 }
 
 PyObject* CatchPy(PyObject* p) {
@@ -134,9 +156,16 @@ size_t Flow::PythonBlock::nparams() {
 	return impl->params;
 }
 
-Flow::FlowVar Flow::PythonBlock::execute(std::vector<FlowVar> args) {
+Flow::FlowVar Flow::PythonBlock::execute(FlowVar args) {
 	if (impl->pFunc == nullptr) throw "This Pythonblock is not ready yet!";
-	return Py2Flow(PyRef(PyObject_Call(impl->pFunc, toTuple(args), NULL))); //Call function in impl
+	if (!std::holds_alternative<Array>(args)) {
+		Array newArgs;
+		if (!std::holds_alternative<Flow::Empty>(args)) { //We want an empty tuple if it is delibritley empty
+			newArgs.push_back(args);
+		}
+		args = FlowVar(newArgs);
+	}
+	return Py2Flow(PyRef(PyObject_Call(impl->pFunc, Flow2Py(args), NULL))); //Call function in impl
 }
 
 void Flow::PythonBlock::precompile(){

@@ -1,6 +1,7 @@
 #include "doctest.h"
 #include <filesystem>
 
+#include <Flow/FlowTypes.h>
 #include <Flow/FlowDocument.h>
 #include <Flow/CorePlugin.h>
 #include <Flow/blocks/codeblocks/PythonBlock.h>
@@ -40,7 +41,7 @@ TEST_CASE("PythonBlock can run python") {
 	SUBCASE("Runs without error") {
 		pyLogic->setSource(R"(
 def hello_python():
-  print("Hello Python")
+  return "Hello Python"
 )");
 		pyLogic->execute({});
 	}
@@ -54,17 +55,17 @@ TEST_CASE("PythonBlock can reflect on python functions") {
 	SUBCASE("Knows correct amount of parameters") {
 		pyLogic->setSource(R"(
 def hello_python():
-  print("Hello Python")
+  return "Hello Python"
 )");
 		CHECK(pyLogic->nparams() == 0);
 		pyLogic->setSource(R"(
 def hello_python(param1):
-  print("Hello Python")
+  return "Hello Python"
 )");
 		CHECK(pyLogic->nparams() == 1);
 		pyLogic->setSource(R"(
 def hello_python(param1, param2):
-  print("Hello Python")
+  return "Hello Python"
 )");
 		CHECK(pyLogic->nparams() == 2);
 	}
@@ -80,7 +81,7 @@ TEST_CASE("PythonBlock parameter test") {
 def addNumbers(a, b):
   return a + b
 )");
-		auto result = pyLogic->execute({1,2});
+		auto result = pyLogic->execute(Flow::Array{1, 2});
 		CHECK(std::get<long>(result) == 3);
 	}
 	SUBCASE("Can chain parametered functions") {
@@ -88,9 +89,23 @@ def addNumbers(a, b):
 def doubleNum(a):
   return 2*a
 )");
-		auto result = pyLogic->execute({ pyLogic->execute({ 3 }) });
+		auto result = pyLogic->execute(pyLogic->execute(3));
 		CHECK(std::get<long>(result) == 12);
 	}
+}
+
+TEST_CASE("PythonBlock can return tuple types") {
+	initCoreComponents();
+	auto block = Flow::Block::create("PythonBlock").value();
+	auto ptr = block->logic().get();
+	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
+	Flow::Array input{ 1,2,3 };
+	pyLogic->setSource(R"(
+def testReturnTuples(p1, p2, p3):
+    return p1, p2, p3
+)");
+	auto result = pyLogic->execute(input);
+	CHECK(result == input);
 }
 
 TEST_CASE("PythonBlock saving/loading test") {

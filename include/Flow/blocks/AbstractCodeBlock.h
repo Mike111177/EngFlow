@@ -18,7 +18,7 @@ namespace Flow{
 		virtual FlowResourceList getResources() override;
 		virtual void loadResources(FlowResourceList&) override;
 		virtual size_t nparams() = 0;
-		virtual FlowVar execute(std::vector<FlowVar>) = 0;
+		virtual FlowVar execute(FlowVar args) = 0;
 		virtual void precompile() = 0;
 		void setSource(std::string);
 	};
