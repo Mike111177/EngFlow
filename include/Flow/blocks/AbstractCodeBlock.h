@@ -15,7 +15,7 @@ namespace Flow{
 		using Logic::Logic;
 		void load();
 		void save();
-		virtual FlowResourceList getResources() override;
+		virtual void saveResources(std::unique_ptr<FlowResourceList>&) override;
 		virtual void loadResources(FlowResourceList&) override;
 		virtual size_t nparams() = 0;
 		virtual FlowVar execute(FlowVar args) = 0;

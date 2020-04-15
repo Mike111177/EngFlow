@@ -23,7 +23,7 @@ namespace Flow {
 		public:
 			Logic(std::weak_ptr<Block>);
 			std::shared_ptr<Block> block();
-			virtual FlowResourceList getResources();
+			virtual void saveResources(std::unique_ptr<FlowResourceList> &);
 			virtual void loadResources(FlowResourceList &);
 			virtual ~Logic();
 		};

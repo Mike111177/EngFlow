@@ -85,6 +85,7 @@ namespace Flow{
 	struct FlowResource {
 		std::string name;
 		std::vector<char> data;
+		FlowResource(std::string const&, std::vector<char> const&);
 	};
 	using FlowResourceList = std::vector<FlowResource>;
 

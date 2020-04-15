@@ -18,8 +18,8 @@ void Flow::AbstractCodeBlock::save() {
 	saveBinary(/*dr*/);
 }
 
-Flow::FlowResourceList Flow::AbstractCodeBlock::getResources() {
-	return { {"source" + sourceExt, {source.begin(), source.end()}} };
+void Flow::AbstractCodeBlock::saveResources(std::unique_ptr<FlowResourceList> &resList) {
+	resList->emplace_back("source" + sourceExt, std::vector<char>{ source.begin(), source.end() });
 }
 
 void Flow::AbstractCodeBlock::loadResources(FlowResourceList& resources) {

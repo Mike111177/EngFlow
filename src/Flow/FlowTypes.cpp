@@ -71,3 +71,5 @@ bool Flow::operator==(Array const& a, Array const& b) {
 bool Flow::operator!=(FlowVar const& a, FlowVar const& b) {
 	return !(a==b);
 }
+
+Flow::FlowResource::FlowResource(std::string const& filename, std::vector<char> const& filedata): name(filename), data(filedata) {}

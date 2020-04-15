@@ -87,8 +87,8 @@ void Flow::FlowDocument::setName(std::filesystem::path const& name) {
 
 bool Flow::FlowDocument::save() {
 	if (!pathSet) throw std::runtime_error("Document has no path given to save to");
-	//List of buffers to clear later to make LibZip happy
-	std::vector<std::unique_ptr<char[]>> buffers; 
+	//List of all resource data to be saved that we need to hold on to
+	std::vector<std::unique_ptr<FlowResourceList>> resources; 
 	int err = 0;
 	//Open Zip Folder
 	zip_error_t zerr;
@@ -114,26 +114,20 @@ bool Flow::FlowDocument::save() {
 			auto blockX = GlobalBlocks.append_child("GlobalBlocks");
 			blockX.append_attribute("name") = block->name.c_str();
 			blockX.append_attribute("type") = block->getType().c_str();
-			//Ask the block what files it wants to save
-			auto resources = block->logic()->getResources();
-			if (resources.size() > 0) {
-				for (auto& res : resources) {
-					std::string p = "blocks/" + block->name + "/" + res.name;
-					//C people are weird
-					auto data = res.data.data(); 
-					auto size = res.data.size();
-					//Need to save the data (from a vector<char>) or else res will go out of scope
-					//And libzip doesn't actually read the data until zip_close
-					buffers.push_back(std::make_unique<char[]>(size));
-					std::copy(data, data + size, buffers.back().get());
-					//Add to zip
-					auto resSource = zip_source_buffer(zf, buffers.back().get(), size, 0);
-					zip_file_add(zf, p.c_str(), resSource, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8);
-					//Add to xml index
-					auto resEntry = blockX.append_child("Resource");
-					resEntry.append_attribute("name") = res.name.c_str();
-					resEntry.append_attribute("location") = p.c_str();
-				}
+			std::string resourcePath = "blocks/" + block->name + "/";
+			//Create new block to store resources
+			resources.emplace_back(std::make_unique<FlowResourceList>());
+			//Ask block to fill block with resources
+			block->logic()->saveResources(resources.back());
+			for (auto& res : *(resources.back())) {
+				auto filePath = resourcePath + res.name;
+				//Add to zip
+				auto resSource = zip_source_buffer(zf, res.data.data(), res.data.size(), 0);
+				zip_file_add(zf, filePath.c_str(), resSource, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8);
+				//Add to xml index
+				auto resEntry = blockX.append_child("Resource");
+				resEntry.append_attribute("name") = res.name.c_str();
+				resEntry.append_attribute("location") = filePath.c_str();
 			}
 		}
 	}

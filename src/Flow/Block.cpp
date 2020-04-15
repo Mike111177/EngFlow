@@ -8,7 +8,8 @@ std::shared_ptr<Flow::Block> Flow::Block::Logic::block() {
 	return _block.lock();
 }
 
-Flow::FlowResourceList Flow::Block::Logic::getResources() {	return {};}
+void Flow::Block::Logic::saveResources(std::unique_ptr<FlowResourceList> &) {}
+
 
 void Flow::Block::Logic::loadResources(FlowResourceList&) {}
 
