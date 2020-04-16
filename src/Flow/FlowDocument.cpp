@@ -88,7 +88,7 @@ void Flow::FlowDocument::setName(std::filesystem::path const& name) {
 bool Flow::FlowDocument::save() {
 	if (!pathSet) throw std::runtime_error("Document has no path given to save to");
 	//List of all resource data to be saved that we need to hold on to
-	std::vector<std::unique_ptr<FlowResourceList>> resources; 
+	std::vector<FlowResourceList> resources; 
 	int err = 0;
 	//Open Zip Folder
 	zip_error_t zerr;
@@ -115,11 +115,8 @@ bool Flow::FlowDocument::save() {
 			blockX.append_attribute("name") = block->name.c_str();
 			blockX.append_attribute("type") = block->getType().c_str();
 			std::string resourcePath = "blocks/" + block->name + "/";
-			//Create new block to store resources
-			resources.emplace_back(std::make_unique<FlowResourceList>());
-			//Ask block to fill block with resources
-			block->logic()->saveResources(resources.back());
-			for (auto& res : *(resources.back())) {
+			//Add block resources
+			for (auto& res : block->logic()->saveResources(resources.emplace_back())) {
 				auto filePath = resourcePath + res.name;
 				//Add to zip
 				auto resSource = zip_source_buffer(zf, res.data.data(), res.data.size(), 0);

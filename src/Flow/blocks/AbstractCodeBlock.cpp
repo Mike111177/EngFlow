@@ -1,25 +1,8 @@
 #include <Flow\blocks\AbstractCodeBlock.h>
 
-bool Flow::AbstractCodeBlock::loadBinary() {
-	return false;
-}
-
-void Flow::AbstractCodeBlock::saveBinary() {}
-
-void Flow::AbstractCodeBlock::load() {
-	//source = dr.read("Source" + sourceExt);
-	if (!loadBinary()) {
-		precompile();
-	}
-}
-
-void Flow::AbstractCodeBlock::save() {
-	//dr.write("Source" + sourceExt, source);
-	saveBinary(/*dr*/);
-}
-
-void Flow::AbstractCodeBlock::saveResources(std::unique_ptr<FlowResourceList> &resList) {
-	resList->emplace_back("source" + sourceExt, std::vector<char>{ source.begin(), source.end() });
+Flow::FlowResourceList& Flow::AbstractCodeBlock::saveResources(FlowResourceList &resList) {
+	resList.emplace_back("source" + sourceExt, std::vector<char>{ source.begin(), source.end() });
+	return resList;
 }
 
 void Flow::AbstractCodeBlock::loadResources(FlowResourceList& resources) {

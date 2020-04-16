@@ -9,13 +9,9 @@ namespace Flow{
 	protected:
 		std::string sourceExt = ".code"; //Derived classes may choose to change this
 		std::string source;
-		virtual bool loadBinary();
-		virtual void saveBinary();
 	public:
 		using Logic::Logic;
-		void load();
-		void save();
-		virtual void saveResources(std::unique_ptr<FlowResourceList>&) override;
+		virtual FlowResourceList& saveResources(FlowResourceList&) override;
 		virtual void loadResources(FlowResourceList&) override;
 		virtual size_t nparams() = 0;
 		virtual FlowVar execute(FlowVar args) = 0;
