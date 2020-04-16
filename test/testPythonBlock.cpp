@@ -110,6 +110,7 @@ def testReturnTuples(p1, p2, p3):
 	Flow::FlowVar result;
 	REQUIRE_NOTHROW(result = pyLogic->execute(input));
 	CHECK(result == input);
+	CHECK(result[1] == 2);
 }
 
 TEST_CASE("PythonBlock saving/loading test") {

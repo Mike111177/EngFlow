@@ -1,5 +1,7 @@
 #include <sstream>
 #include <concepts>
+#include <typeinfo>
+#include <stdexcept>
 
 #include <Flow/FlowTypes.h>
 
@@ -73,3 +75,30 @@ bool Flow::operator!=(FlowVar const& a, FlowVar const& b) {
 }
 
 Flow::FlowResource::FlowResource(std::string const& filename, std::vector<char> const& filedata): name(filename), data(filedata) {}
+
+//Someone smarter than me can make this pretty. All is one in the eyes of the compiler.
+template <typename T>
+concept sqaureBrackiAble = requires (T t) {
+	{ t[0] }->std::convertible_to<Flow::FlowVar&>;
+};
+
+template<typename A>
+Flow::FlowVar& operatorSqBracki(Flow::FlowVar& a, size_t i) {
+	return std::get<A>(a)[i];
+}
+
+static struct {
+	using RetType = decltype(&operatorSqBracki<std::vector<Flow::FlowVar>>);
+	template<typename A>
+	RetType operator()(A) requires (sqaureBrackiAble<A>) {
+		return operatorSqBracki<A>;
+	}
+	template<typename A>
+	RetType operator()(A) requires (!sqaureBrackiAble<A>) {
+		throw std::runtime_error(std::string(typeid(A).name()) + " has no operator[size_t].");
+	}
+} opSqBracki;
+
+Flow::FlowVar& Flow::FlowVar::operator[](size_t s) {
+	return std::visit(opSqBracki, *this)(*this, s);
+}

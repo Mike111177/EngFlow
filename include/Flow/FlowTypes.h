@@ -42,15 +42,15 @@ namespace Flow{
 			for (auto& o : vec) push_back(o); 
 		}
 	};
-	using FlowVar_v = std::variant<
-		Empty,
-		Null,
-		int,
-		long,
-		double,
-		std::string,
-		Array
-	>; //TODO add arbitrary precision type, matrix type
+	using String = std::string;
+	//There is probably a more elegant way to organize this
+	using FlowVar_v = std::variant<Empty,Null,
+		                           //bool, //bool breaks stuff, will find out later
+								   signed char, signed short, signed int, signed long,
+								   unsigned char, unsigned short, unsigned int, unsigned long,
+								   float, double, //I might make all numerics their own subvarient...
+								   String, Array>;
+	//TODO add arbitrary precision type, matrix type
 
 	//Concepts to control FlowVar operator overloading
 	template <typename A, typename B>
@@ -79,6 +79,7 @@ namespace Flow{
 				return std::nullopt;
 			}
 		}
+		FlowVar& operator[](size_t);
 	};
 
 	//File Management
