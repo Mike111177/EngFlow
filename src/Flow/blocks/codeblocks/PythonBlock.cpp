@@ -86,29 +86,35 @@ Flow::FlowVar Py2Flow(PyObject* p) {
 PyObject* CatchPy(PyObject* p) {
 	PyObject* err;
 	if (p == nullptr && (err = PyErr_Occurred()) != nullptr) {
-		//PyObject* type, * value, * traceback;
-		//PyErr_Fetch(&type, &value, &traceback);
-		//PrintPy(err);
-		//auto e = PyObject_CallObject(type, value);
-		//PrintPy(e);
-		//PrintPy(PyObject_GetAttrString(e, "filename"));
-		PyErr_Print();
-		throw "Python Error";
+		PyObject* type, * value, * traceback;
+		PyErr_Fetch(&type, &value, &traceback);
+		auto pstr = PyObject_Str(value);
+		throw std::runtime_error("Python Error: " + std::string(PyUnicode_AsUTF8(pstr)));
 	}
 	return p;
 }
 
 struct Flow::PythonBlockIMPL {
 	static size_t count;
-	PyRef pFunc = nullptr;
 	size_t params;
+	PyRef pModule;
+	struct PyModuleDef def = {
+		PyModuleDef_HEAD_INIT, 
+		nullptr, 
+		NULL,
+		-1, 
+		{}
+	};
+	PyRef pFunc = nullptr;
 	PythonBlockIMPL() {
 		count++;
 		updatePythonVMState();
 	}
 	void compile(std::string const &source, std::string const& name) {
 		PyRef byteCode(CatchPy(Py_CompileString(source.c_str(), name.c_str(), Py_file_input)));
-		auto pModule = PyImport_ExecCodeModule(name.c_str(), byteCode);
+		def.m_name = name.c_str();
+		pModule = PyModule_Create(&def);
+		PyEval_EvalCode(byteCode, PyModule_GetDict(pModule), nullptr);
 		auto modname = std::string(PyModule_GetName(pModule));
 		//inspect.signature
 		auto inspectSignature = PyAdopt(PyDict_GetItemString(PyModule_GetDict(PyRef(PyImport_ImportModule("inspect"))), "signature"));
@@ -165,7 +171,10 @@ Flow::FlowVar Flow::PythonBlock::execute(FlowVar args) {
 		}
 		args = FlowVar(newArgs);
 	}
-	return Py2Flow(PyRef(PyObject_Call(impl->pFunc, Flow2Py(args), NULL))); //Call function in impl
+	auto pyArg = Flow2Py(args);
+	auto pyResult = PyRef(CatchPy(PyObject_Call(impl->pFunc, pyArg, NULL))); //Call function in impl
+	auto result = Py2Flow(pyResult); 
+	return result;
 }
 
 void Flow::PythonBlock::precompile(){

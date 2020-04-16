@@ -38,37 +38,37 @@ TEST_CASE("PythonBlock can run python") {
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic().get();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
-	SUBCASE("Runs without error") {
-		pyLogic->setSource(R"(
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
 def hello_python():
   return "Hello Python"
-)");
-		pyLogic->execute({});
-	}
+)"));
+	CHECK(pyLogic->execute({}) == "Hello Python");
 }
 
-TEST_CASE("PythonBlock can reflect on python functions") {
+TEST_CASE("PythonBlock knows how many parameters to pass its function") {
 	initCoreComponents();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic().get();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
-	SUBCASE("Knows correct amount of parameters") {
-		pyLogic->setSource(R"(
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
 def hello_python():
   return "Hello Python"
-)");
-		CHECK(pyLogic->nparams() == 0);
-		pyLogic->setSource(R"(
+)"));
+	CHECK(pyLogic->nparams() == 0);
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
 def hello_python(param1):
   return "Hello Python"
-)");
-		CHECK(pyLogic->nparams() == 1);
-		pyLogic->setSource(R"(
+)"));
+	CHECK(pyLogic->nparams() == 1);
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
 def hello_python(param1, param2):
   return "Hello Python"
-)");
-		CHECK(pyLogic->nparams() == 2);
-	}
+)"));
+	CHECK(pyLogic->nparams() == 2);
 }
 
 TEST_CASE("PythonBlock parameter test") {
@@ -76,22 +76,24 @@ TEST_CASE("PythonBlock parameter test") {
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic().get();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
-	SUBCASE("Can use parameters") {
-		pyLogic->setSource(R"(
+
+	pyLogic->setSource(R"(
 def addNumbers(a, b):
   return a + b
 )");
-		auto result = pyLogic->execute(Flow::Array{1, 2});
-		CHECK(std::get<long>(result) == 3);
-	}
-	SUBCASE("Can chain parametered functions") {
-		pyLogic->setSource(R"(
+	Flow::FlowVar result = pyLogic->execute(Flow::Array{1, 2});
+	CHECK(result == 3);
+
+	auto numtodouble = 3;
+	pyLogic->setSource(
+R"(
 def doubleNum(a):
   return 2*a
 )");
-		auto result = pyLogic->execute(pyLogic->execute(3));
-		CHECK(std::get<long>(result) == 12);
-	}
+	REQUIRE_NOTHROW(result = pyLogic->execute(numtodouble));
+	CHECK(result == numtodouble * 2);
+	REQUIRE_NOTHROW(result = pyLogic->execute(result));
+	CHECK(result == numtodouble * 2 * 2);
 }
 
 TEST_CASE("PythonBlock can return tuple types") {
@@ -100,40 +102,50 @@ TEST_CASE("PythonBlock can return tuple types") {
 	auto ptr = block->logic().get();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 	Flow::Array input{ 1,2,3 };
-	pyLogic->setSource(R"(
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
 def testReturnTuples(p1, p2, p3):
     return p1, p2, p3
-)");
-	auto result = pyLogic->execute(input);
+)"));
+	Flow::FlowVar result;
+	REQUIRE_NOTHROW(result = pyLogic->execute(input));
 	CHECK(result == input);
 }
 
 TEST_CASE("PythonBlock saving/loading test") {
 	initCoreComponents();
-	std::filesystem::path path = "TestFlowPythonDocument.zip";
+	auto path = std::filesystem::temp_directory_path()/"TestFlowPythonDocument.efd";
 	// If the file already exist, this test would be pretty meaningless
-	if (std::filesystem::exists(path)) { std::filesystem::remove(path); }
-	CHECK(!std::filesystem::exists(path));
-
-	Flow::FlowDocument testDoc(path);
-	{
+	if (std::filesystem::exists(path)) { try { std::filesystem::remove(path); } catch (...) {} }
+	REQUIRE_FALSE(std::filesystem::exists(path));
+	{ //Scoped to ensure no carry-over in memory
+		Flow::FlowDocument testDoc(path);
 		auto block = Flow::Block::create("PythonBlock").value();
 		auto pyLogic = dynamic_cast<Flow::PythonBlock*>(block->logic().get());
-		auto source = R"(
+		pyLogic->setSource(
+R"(
 def verify():
   return "I made it!"
-)";
-		pyLogic->setSource(source);
+)");
+		CHECK(pyLogic->execute({}) == "I made it!"); //Make sure it works before saving it
 		block->name = "TestBlock";
 		testDoc.globalBlocks.push_back(block);
+		testDoc.save();
+		testDoc.close();
 	}
-	testDoc.save();
-	testDoc.close();
-	testDoc.open();
-	CHECK(testDoc.globalBlocks.size()==1);
-	auto ptr = testDoc.globalBlocks[0]->logic().get();
-	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
-	CHECK(pyLogic != nullptr);
-	auto result = pyLogic->execute({});
-	CHECK(std::get<std::string>(result) == "I made it!");
+	REQUIRE_MESSAGE(std::filesystem::exists(path), "Could not create file, unknown reason.");
+	{ //Now to load
+		Flow::FlowDocument testDoc(path);
+		testDoc.open();
+		CHECK(testDoc.globalBlocks.size() == 1); //We saved one block, we should recieve one block
+		//Any Code Block should behave the same, assuming the output is correct
+		auto pyLogic = dynamic_cast<Flow::AbstractCodeBlock*>(testDoc.globalBlocks[0]->logic().get());
+		REQUIRE_MESSAGE(pyLogic != nullptr, "Could not convert the only block in this file to a code block.");
+		CHECK(pyLogic->execute({}) == "I made it!");
+	}
+	//Cleanup
+	if (std::filesystem::exists(path)) { 
+		try {std::filesystem::remove(path);}catch (...){}
+	}
+	WARN_FALSE_MESSAGE(std::filesystem::exists(path), "Unable to clean up test file");
 }
