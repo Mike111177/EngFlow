@@ -6,16 +6,21 @@
 #include <optional>
 #include <type_traits>
 #include <typeinfo> 
+#include <unordered_map>
 
 namespace Flow{
 	//Global Softtype
 	template <typename T>
-	concept FlowVarType_c = requires (T t) {
-		Flow::FlowVar_v(t);
-	};
+	concept FlowVarType_c = 
+		std::constructible_from<FlowVar_v, T> && 
+		!std::same_as<FlowVar_v, T> && 
+		!std::same_as<FlowVar, T>;
 
+	//stdlib rips
 	class FlowVar;
 	using Empty = std::monostate;
+	using String = std::string;
+
 	//Null Variables Sometimes do and sometimes dont have special meaning depending on the language
 	struct Null {
 		constexpr bool operator==(Null) noexcept { return true; }
@@ -37,19 +42,21 @@ namespace Flow{
 		enum class Hint {TUPLE,	ARRAY} hint = Hint::TUPLE;
 		using std::vector<FlowVar>::vector;
 		template<FlowVarType_c T>
-		Array(std::vector<T> vec) {
+		Array(std::vector<T> const& vec) {
 			reserve(vec.size());
-			for (auto& o : vec) push_back(o); 
+			for (auto const& o : vec) emplace_back(o); 
 		}
 	};
-	using String = std::string;
+	struct Dict : std::unordered_map<String, FlowVar> {
+
+	};
 	//There is probably a more elegant way to organize this
 	using FlowVar_v = std::variant<Empty,Null,
 		                           //bool, //bool breaks stuff, will find out later
 								   signed char, signed short, signed int, signed long,
 								   unsigned char, unsigned short, unsigned int, unsigned long,
 								   float, double, //I might make all numerics their own subvarient...
-								   String, Array>;
+								   String, Array, Dict>;
 	//TODO add arbitrary precision type, matrix type
 
 	//Concepts to control FlowVar operator overloading
@@ -79,7 +86,8 @@ namespace Flow{
 				return std::nullopt;
 			}
 		}
-		FlowVar& operator[](size_t);
+		FlowVar& operator[](size_t const&);
+		FlowVar& operator[](std::string const&);
 	};
 
 	//File Management
@@ -102,6 +110,7 @@ namespace Flow{
 namespace std {
 	std::string to_string(Flow::FlowVar const&);
 	std::string to_string(Flow::Array const&);
+	std::string to_string(Flow::Dict const&);
 }
 
 

@@ -113,7 +113,7 @@ bool Flow::FlowDocument::save() {
 			//Add block info to index xml tree
 			auto blockX = GlobalBlocks.append_child("GlobalBlocks");
 			blockX.append_attribute("name") = block->name.c_str();
-			blockX.append_attribute("type") = block->getType().c_str();
+			blockX.append_attribute("type") = block->type().c_str();
 			std::string resourcePath = "blocks/" + block->name + "/";
 			//Add block resources
 			for (auto& res : block->logic()->saveResources(resources.emplace_back())) {

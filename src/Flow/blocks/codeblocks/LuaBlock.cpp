@@ -32,6 +32,7 @@ size_t Flow::LuaBlock::nparams() {
 Flow::FlowVar Flow::LuaBlock::execute(FlowVar args) {
 	if (!impl->ready) throw "This Luablock is not ready yet!";
 	luaL_dostring(impl->luaState, source.c_str());
+	return {};
 }
 
 void Flow::LuaBlock::precompile() { impl->ready = true; }

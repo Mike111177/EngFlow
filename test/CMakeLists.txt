@@ -19,7 +19,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(doctest source_dir)
 set(DOCTEST_INCLUDE_DIR ${source_dir}/doctest CACHE INTERNAL "Path to include folder for doctest")
 
-set(TEST_SOURCES testMain.cpp testFlowDocument.cpp)
+set(TEST_SOURCES testMain.cpp testFlowTypes.cpp testFlowDocument.cpp)
 set(TEST_LIBS Flow)
 
 #Determine Additional Availible Tests

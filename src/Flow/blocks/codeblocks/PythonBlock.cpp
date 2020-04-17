@@ -59,6 +59,12 @@ static struct {
 		}
 		return tup;
 	}
+	//Dicts
+	PyRef operator()(Flow::Dict d) {
+		auto dict = PyDict_New();
+		for (auto& fo : d) PyDict_SetItemString(dict, fo.first.c_str(), Flow2Py(fo.second));
+		return dict;
+	}
 } flow2py;
 
 PyRef Flow2Py(Flow::FlowVar &o) {
@@ -70,15 +76,22 @@ Flow::FlowVar Py2Flow(PyObject* p) {
 		return PyLong_AsLong(p);
 	} else if (PyUnicode_Check(p)) {
 		auto size = PyUnicode_GET_LENGTH(p);
-		return std::string(PyUnicode_AsUTF8(p), size);
+		return Flow::String(PyUnicode_AsUTF8(p), size);
 	} else if (PyTuple_Check(p)) {
 		auto size = PyTuple_Size(p);
-		std::vector<Flow::FlowVar> fTup(size);
+		Flow::Array fTup(size);
 		for (auto i = 0; i < size; i++) {
 			//Circular references will break this boy
 			fTup[i] = Py2Flow(PyTuple_GetItem(p, i));
 		}
 		return fTup;
+	} else if (PyDict_Check(p)) {
+		Flow::Dict fDict;
+		PyObject* pKey = nullptr, * pValue = nullptr;
+		for (Py_ssize_t i = 0; PyDict_Next(p, &i, &pKey, &pValue);) {
+			fDict.insert({ PyUnicode_AsUTF8(pKey), Py2Flow(pValue) });
+		}
+		return fDict;
 	}
 	return std::monostate();
 }
@@ -178,7 +191,7 @@ Flow::FlowVar Flow::PythonBlock::execute(FlowVar args) {
 }
 
 void Flow::PythonBlock::precompile(){
-	impl->compile(source,block()->name);
+	impl->compile(source,block().name);
 }
 
 Flow::PythonBlock::~PythonBlock() {}

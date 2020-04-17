@@ -10,14 +10,14 @@ TEST_CASE("LuaBlock common block requirements") {
 	SUBCASE("Block is registered") {
 		CHECK(blockOpt.has_value());
 	}
-	auto block = *blockOpt;
+	auto block = blockOpt.value();
 	SUBCASE("Block pointer agrees with logic block ptr") {
-		CHECK(block == block->logic()->block());
+		CHECK(block.get() == &block->logic()->block());
 	}
 	SUBCASE("Block logic pointer agrees with logic block logic ptr") {
-		CHECK(block->logic() == block->logic()->block()->logic());
+		CHECK(block->logic() == block->logic()->block().logic());
 	}
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
 	SUBCASE("Block logic is actually a luablock") {
 		CHECK(luaLogic != nullptr);
@@ -30,7 +30,7 @@ TEST_CASE("LuaBlock common block requirements") {
 TEST_CASE("LuaBlock can run Lua") {
 	initCoreComponents();
 	auto block = Flow::Block::create("LuaBlock").value();
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
 	SUBCASE("Runs without error") {
 		luaLogic->setSource("print(\"Hello LuaBlock\")");

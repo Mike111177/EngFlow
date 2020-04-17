@@ -15,18 +15,18 @@ TEST_CASE("PythonBlock common block requirements") {
 	}
 	auto block = *blockOpt;
 	SUBCASE("Block pointer agrees with logic block ptr") {
-		CHECK(block == block->logic()->block());
+		CHECK(block.get() == &block->logic()->block());
 	}
 	SUBCASE("Block logic pointer agrees with logic block logic ptr") {
-		CHECK(block->logic() == block->logic()->block()->logic());
+		CHECK(block->logic() == block->logic()->block().logic());
 	}
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 	SUBCASE("Block logic is actually a Pythonblock") {
 		CHECK(pyLogic != nullptr);
 	}
 	SUBCASE("Block logic pointer agrees with logic block logic ptr") {
-		CHECK(block->logic() == block->logic()->block()->logic());
+		CHECK(block->logic() == block->logic()->block().logic());
 	}
 	SUBCASE("Throws when trying to execute before supplying code") {
 		CHECK_THROWS(pyLogic->execute({}));
@@ -36,7 +36,7 @@ TEST_CASE("PythonBlock common block requirements") {
 TEST_CASE("PythonBlock can run python") {
 	initCoreComponents();
 	auto block = Flow::Block::create("PythonBlock").value();
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
@@ -49,7 +49,7 @@ def hello_python():
 TEST_CASE("PythonBlock knows how many parameters to pass its function") {
 	initCoreComponents();
 	auto block = Flow::Block::create("PythonBlock").value();
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
@@ -74,7 +74,7 @@ def hello_python(param1, param2):
 TEST_CASE("PythonBlock parameter test") {
 	initCoreComponents();
 	auto block = Flow::Block::create("PythonBlock").value();
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 
 	pyLogic->setSource(R"(
@@ -99,7 +99,7 @@ def doubleNum(a):
 TEST_CASE("PythonBlock can return tuple types") {
 	initCoreComponents();
 	auto block = Flow::Block::create("PythonBlock").value();
-	auto ptr = block->logic().get();
+	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 	Flow::Array input{ 1,2,3 };
 	REQUIRE_NOTHROW(pyLogic->setSource(
@@ -113,6 +113,25 @@ def testReturnTuples(p1, p2, p3):
 	CHECK(result[1] == 2);
 }
 
+TEST_CASE("PythonBlock can work with Dict types") {
+	initCoreComponents();
+	auto block = Flow::Block::create("PythonBlock").value();
+	auto ptr = block->logic();
+	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
+	Flow::Dict input;
+	input["apple"] = 6;
+	REQUIRE_NOTHROW(pyLogic->setSource(
+R"(
+def testReturnTuples(mydict):
+  mydict["banana"] = 3
+  return mydict
+)"));
+	Flow::FlowVar result;
+	REQUIRE_NOTHROW(result = pyLogic->execute(input));
+	CHECK(result["apple"] == 6);
+	CHECK(result["banana"] == 3);
+}
+
 TEST_CASE("PythonBlock saving/loading test") {
 	initCoreComponents();
 	auto path = std::filesystem::temp_directory_path()/"TestFlowPythonDocument.efd";
@@ -122,7 +141,7 @@ TEST_CASE("PythonBlock saving/loading test") {
 	{ //Scoped to ensure no carry-over in memory
 		Flow::FlowDocument testDoc(path);
 		auto block = Flow::Block::create("PythonBlock").value();
-		auto pyLogic = dynamic_cast<Flow::PythonBlock*>(block->logic().get());
+		auto pyLogic = dynamic_cast<Flow::PythonBlock*>(block->logic());
 		pyLogic->setSource(
 R"(
 def verify():
@@ -140,7 +159,7 @@ def verify():
 		testDoc.open();
 		CHECK(testDoc.globalBlocks.size() == 1); //We saved one block, we should recieve one block
 		//Any Code Block should behave the same, assuming the output is correct
-		auto pyLogic = dynamic_cast<Flow::AbstractCodeBlock*>(testDoc.globalBlocks[0]->logic().get());
+		auto pyLogic = dynamic_cast<Flow::AbstractCodeBlock*>(testDoc.globalBlocks[0]->logic());
 		REQUIRE_MESSAGE(pyLogic != nullptr, "Could not convert the only block in this file to a code block.");
 		CHECK(pyLogic->execute({}) == "I made it!");
 	}
