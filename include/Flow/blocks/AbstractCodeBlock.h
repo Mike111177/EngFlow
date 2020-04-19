@@ -3,19 +3,28 @@
 
 #include <Flow/FlowTypes.h>
 #include <Flow/Block.h>
+#include <Flow/Util.h>
 
 namespace Flow{
 	class AbstractCodeBlock : public Block::Logic {
+		class CompileThread;
+		static_ptr<AbstractCodeBlock, CompileThread> compiler;
 	protected:
 		std::string sourceExt = ".code"; //Derived classes may choose to change this
-		std::string source;
+		virtual FlowVar run(FlowVar args) = 0;
+		virtual size_t nparams() = 0;
 	public:
-		using Logic::Logic;
+		struct PData;
+		std::unique_ptr<PData> pdata;
+		std::string source;
+		AbstractCodeBlock(std::weak_ptr<Block> b);
 		virtual FlowResourceList& saveResources(FlowResourceList&) override;
 		virtual void loadResources(FlowResourceList&) override;
-		virtual size_t nparams() = 0;
-		virtual FlowVar execute(FlowVar args) = 0;
-		virtual void precompile() = 0;
+		size_t params();
+		void waitReady();
+		FlowVar execute(FlowVar args);
+		virtual bool precompile() = 0;
 		void setSource(std::string);
+		virtual ~AbstractCodeBlock();
 	};
 }

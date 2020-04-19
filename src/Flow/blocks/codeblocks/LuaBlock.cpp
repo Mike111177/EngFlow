@@ -29,13 +29,13 @@ size_t Flow::LuaBlock::nparams() {
 	return 0;
 }
 
-Flow::FlowVar Flow::LuaBlock::execute(FlowVar args) {
+Flow::FlowVar Flow::LuaBlock::run(FlowVar args) {
 	if (!impl->ready) throw "This Luablock is not ready yet!";
 	luaL_dostring(impl->luaState, source.c_str());
 	return {};
 }
 
-void Flow::LuaBlock::precompile() { impl->ready = true; }
+bool Flow::LuaBlock::precompile() { return impl->ready = true; }
 
 Flow::LuaBlock::~LuaBlock() {
 	lua_close(impl->luaState);

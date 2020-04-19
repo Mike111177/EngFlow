@@ -56,19 +56,19 @@ R"(
 def hello_python():
   return "Hello Python"
 )"));
-	CHECK(pyLogic->nparams() == 0);
+	CHECK(pyLogic->params() == 0);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
 def hello_python(param1):
   return "Hello Python"
 )"));
-	CHECK(pyLogic->nparams() == 1);
+	CHECK(pyLogic->params() == 1);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
 def hello_python(param1, param2):
   return "Hello Python"
 )"));
-	CHECK(pyLogic->nparams() == 2);
+	CHECK(pyLogic->params() == 2);
 }
 
 TEST_CASE("PythonBlock parameter test") {
@@ -167,5 +167,26 @@ def verify():
 	if (std::filesystem::exists(path)) { 
 		try {std::filesystem::remove(path);}catch (...){}
 	}
-	WARN_FALSE_MESSAGE(std::filesystem::exists(path), "Unable to clean up test file");
+	//WARN_FALSE_MESSAGE(std::filesystem::exists(path), "Unable to clean up test file");
+}
+
+TEST_CASE("Multiple PythonBlocks can communicate ") {
+	initCoreComponents();
+	auto block1 = Flow::Block::create("PythonBlock").value();
+	auto ptr1 = block1->logic();
+	auto pyLogic1 = dynamic_cast<Flow::PythonBlock*>(ptr1);
+	REQUIRE_NOTHROW(pyLogic1->setSource(
+		R"(
+def retString():
+  return "Hello Python"
+)"));
+	auto block2 = Flow::Block::create("PythonBlock").value();
+	auto ptr2 = block2->logic();
+	auto pyLogic2 = dynamic_cast<Flow::PythonBlock*>(ptr2);
+	REQUIRE_NOTHROW(pyLogic2->setSource(
+		R"(
+def splitString(the_string):
+  return the_string.split(' ')[0]
+)"));
+	CHECK(pyLogic2->execute(pyLogic1->execute({})) == "Hello");
 }
