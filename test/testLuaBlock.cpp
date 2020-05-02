@@ -117,5 +117,30 @@ return verify
 	//WARN_FALSE_MESSAGE(std::filesystem::exists(path), "Unable to clean up test file");
 }
 
+TEST_CASE("Multiple LuaBlocks can communicate ") {
+	initCoreComponents();
+	auto block1 = Flow::Block::create("LuaBlock").value();
+	auto ptr1 = block1->logic();
+	auto luaLogic1 = dynamic_cast<Flow::LuaBlock*>(ptr1);
+	REQUIRE_NOTHROW(luaLogic1->setSource(
+R"(
+function retString()
+  return "Hello Lua"
+end
+return retString
+)"));
+	auto block2 = Flow::Block::create("LuaBlock").value();
+	auto ptr2 = block2->logic();
+	auto luaLogic2 = dynamic_cast<Flow::LuaBlock*>(ptr2);
+	REQUIRE_NOTHROW(luaLogic2->setSource(
+R"(
+function splitString(the_string)
+  return string.sub(the_string, 1, 5)
+end
+return splitString
+)"));
+	CHECK(luaLogic2->execute(luaLogic1->execute({})) == "Hello");
+}
+
 
 
