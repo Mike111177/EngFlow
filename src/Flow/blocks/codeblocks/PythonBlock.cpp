@@ -111,6 +111,8 @@ PyObject* Flow2Py(Flow::FlowVar &o) {
 Flow::FlowVar Py2Flow(PyObject* p) {
 	if (PyLong_Check(p)) {
 		return PyLong_AsLong(p);
+	} else if (PyFloat_Check(p)) {
+		return PyFloat_AsDouble(p);
 	} else if (PyUnicode_Check(p)) {
 		auto size = PyUnicode_GET_LENGTH(p);
 		return Flow::String(PyUnicode_AsUTF8(p), size);
@@ -139,7 +141,8 @@ PyObject* CatchPy(PyObject* p) {
 		PyObject* type, * value, * traceback;
 		PyErr_Fetch(&type, &value, &traceback);
 		auto pstr = PyObject_Str(value);
-		throw std::runtime_error("Python Error: " + std::string(PyUnicode_AsUTF8(pstr)));
+		std::string errstr(PyUnicode_AsUTF8(pstr));
+		throw std::runtime_error("Python Error: " + errstr);
 	}
 	return p;
 }
@@ -170,6 +173,8 @@ struct Flow::PythonBlockIMPL {
 		loaded = true;
 
 		auto pModDict = CatchPy(PyModule_GetDict(pModule));
+		PyObject* builtins = PyEval_GetBuiltins();
+		PyDict_SetItemString(pModDict, "__builtins__", builtins);
 		PyEval_EvalCode(byteCode, pModDict, nullptr);
 		auto modname = std::string(PyModule_GetName(pModule));
 		auto inspectFunc = PyRef::adopt(PyDict_GetItemString(PyModule_GetDict(PyRef(PyImport_ImportModule("inspect"))), "signature"));

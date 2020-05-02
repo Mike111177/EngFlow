@@ -12,14 +12,20 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 	option(FLOW_BUILD_TESTING "Build Flow Testing Modules" ON)
+	option(FLOW_BUILD_EXAMPLES "Build Flow Example Modules" ON)
 	option(FLOW_RUN_TESTS "Run Flow Testing Modules" ON)
 else()
 	option(FLOW_BUILD_TESTING "Build Flow Testing Modules" OFF)
+	option(FLOW_BUILD_EXAMPLES "Build Flow Example Modules" OFF)
 	option(FLOW_RUN_TESTS "Run Flow Testing Modules" OFF)
 endif()
 
 if(FLOW_BUILD_TESTING)
     add_subdirectory(${PROJECT_SOURCE_DIR}/test)
+endif()
+
+if(FLOW_BUILD_EXAMPLES)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
 endif()
 
 
