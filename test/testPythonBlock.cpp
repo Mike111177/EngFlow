@@ -77,7 +77,8 @@ TEST_CASE("PythonBlock parameter test") {
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
 
-	pyLogic->setSource(R"(
+	pyLogic->setSource(
+R"(
 def addNumbers(a, b):
   return a + b
 )");

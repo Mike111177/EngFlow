@@ -2,9 +2,9 @@
 #include <Flow/blocks/AbstractCodeBlock.h>
 
 namespace Flow{
-	struct LuaBlockIMPL;
 	class LuaBlock : public AbstractCodeBlock {
-		std::unique_ptr<LuaBlockIMPL> impl;
+		struct IMPL;
+		std::unique_ptr<IMPL> impl;
 	protected:
 		virtual FlowVar run(FlowVar args) override;
 	public:

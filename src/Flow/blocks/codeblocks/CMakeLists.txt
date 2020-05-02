@@ -5,10 +5,11 @@ set(FLOW_CODEBLOCKS_HEADER_DIR ${PROJECT_SOURCE_DIR}/include/Flow/blocks/codeblo
 option(FLOW_BUILD_LUABLOCK "Build Lua Programming Block" ON)
 if (${FLOW_BUILD_LUABLOCK})
 	find_package(Lua REQUIRED)
+	find_package(Sol2 REQUIRED)
 
 	add_library(LuaBlock LuaBlock.cpp ${FLOW_CODEBLOCKS_HEADER_DIR}/LuaBlock.h)
 	
-	target_include_directories(LuaBlock PRIVATE ${FLOW_INCLUDE_DIR} ${LUA_INCLUDE_DIR})
+	target_include_directories(LuaBlock PRIVATE ${FLOW_INCLUDE_DIR} ${LUA_INCLUDE_DIR}  ${SOL2_INCLUDE_DIRS})
 	target_link_libraries(LuaBlock ${LUA_LIBRARY})
 	
 	list(APPEND FLOW_BUILT_BLOCKS LuaBlock)
