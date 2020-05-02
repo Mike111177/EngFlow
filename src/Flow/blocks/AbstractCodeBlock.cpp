@@ -104,7 +104,7 @@ void Flow::AbstractCodeBlock::loadResources(FlowResourceList& resources) {
 	}
 }
 
-size_t Flow::AbstractCodeBlock::params() {
+std::vector<std::string> Flow::AbstractCodeBlock::params() {
 	waitReady();
 	return nparams();
 }

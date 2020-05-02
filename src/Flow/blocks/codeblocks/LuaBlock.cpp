@@ -25,8 +25,8 @@ impl(new LuaBlockIMPL{ luaL_newstate(), false }) {
 	sourceExt = ".py";
 }
 
-size_t Flow::LuaBlock::nparams() {
-	return 0;
+std::vector<std::string> Flow::LuaBlock::nparams() {
+	return {};
 }
 
 Flow::FlowVar Flow::LuaBlock::run(FlowVar args) {

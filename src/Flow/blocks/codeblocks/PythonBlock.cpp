@@ -147,7 +147,7 @@ PyObject* CatchPy(PyObject* p) {
 static size_t nextUID = 0;
 
 struct Flow::PythonBlockIMPL {
-	size_t params = 0;
+	std::vector<std::string> params;
 	static_ptr<PythonBlockIMPL, PyState> state;
 	PyObject* pModule;
 	std::string internal_name;
@@ -184,7 +184,15 @@ struct Flow::PythonBlockIMPL {
 				PyRef sigArgs(Py_BuildValue("(O)", pFunc));
 				PyRef sizRes(PyObject_Call(inspectFunc, sigArgs, NULL)); //run signature function on function
 				PyRef parameters(PyObject_GetAttrString(sizRes, "parameters"));
-				params = PyObject_Length(parameters);
+				params.clear();
+				if (PyMapping_Check(parameters)) {
+					auto paramKeys = PyMapping_Keys(parameters);
+					auto size = PyList_Size(paramKeys);
+					for (auto i = 0; i < size; i++) {
+						auto paramKey = PyList_GetItem(paramKeys, i);
+						params.emplace_back(PyUnicode_AsUTF8(paramKey));
+					}
+				}
 				break; //Only select first function to execute
 			}
 		}
@@ -201,7 +209,7 @@ Flow::PythonBlock::PythonBlock(std::weak_ptr<Block> p) :
 	sourceExt = ".py";
 }
 
-size_t Flow::PythonBlock::nparams() {
+std::vector<std::string> Flow::PythonBlock::nparams() {
 	return impl->params;
 }
 

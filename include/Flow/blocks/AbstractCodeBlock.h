@@ -12,7 +12,7 @@ namespace Flow{
 	protected:
 		std::string sourceExt = ".code"; //Derived classes may choose to change this
 		virtual FlowVar run(FlowVar args) = 0;
-		virtual size_t nparams() = 0;
+		virtual std::vector<std::string> nparams() = 0;
 	public:
 		struct PData;
 		std::unique_ptr<PData> pdata;
@@ -20,7 +20,7 @@ namespace Flow{
 		AbstractCodeBlock(std::weak_ptr<Block> b);
 		virtual FlowResourceList& saveResources(FlowResourceList&) override;
 		virtual void loadResources(FlowResourceList&) override;
-		size_t params();
+		std::vector<std::string> params();
 		void waitReady();
 		FlowVar execute(FlowVar args);
 		virtual bool precompile() = 0;

@@ -56,19 +56,19 @@ R"(
 def hello_python():
   return "Hello Python"
 )"));
-	CHECK(pyLogic->params() == 0);
+	CHECK(pyLogic->params().size() == 0);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
 def hello_python(param1):
   return "Hello Python"
 )"));
-	CHECK(pyLogic->params() == 1);
+	CHECK(pyLogic->params().size() == 1);
 	REQUIRE_NOTHROW(pyLogic->setSource(
 R"(
 def hello_python(param1, param2):
   return "Hello Python"
 )"));
-	CHECK(pyLogic->params() == 2);
+	CHECK(pyLogic->params().size() == 2);
 }
 
 TEST_CASE("PythonBlock parameter test") {

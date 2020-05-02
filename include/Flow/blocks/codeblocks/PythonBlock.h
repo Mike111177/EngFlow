@@ -10,7 +10,7 @@ namespace Flow {
 	public:
 		static const std::string LogicType;
 		PythonBlock(std::weak_ptr<Block> p);
-		virtual size_t nparams() override;
+		virtual std::vector<std::string> nparams() override;
 		virtual bool precompile() override;
 		~PythonBlock();
 	};
