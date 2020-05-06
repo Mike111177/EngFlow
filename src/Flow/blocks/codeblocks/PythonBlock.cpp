@@ -234,6 +234,8 @@ Flow::FlowVar Flow::PythonBlock::run(FlowVar args) {
 	return result;
 }
 
+void Flow::PythonBlock::reg() { Block::registerLogic<PythonBlock>(); }
+
 bool Flow::PythonBlock::precompile(){
 	PyState::lock l;
 	return impl->compile(source,block().name);

@@ -27,3 +27,15 @@ if (${FLOW_BUILD_PYTHONBLOCK})
 	
 	list(APPEND FLOW_BUILT_BLOCKS PythonBlock)
 endif()
+
+# Java Block
+option(FLOW_BUILD_JAVABLOCK "Build Java Programming Block" ON)
+if (${FLOW_BUILD_JAVABLOCK})
+	find_package(JNI REQUIRED)
+
+	add_library(JavaBlock JavaBlock.cpp ${FLOW_CODEBLOCKS_HEADER_DIR}/JavaBlock.h)
+	target_include_directories(JavaBlock PRIVATE ${FLOW_INCLUDE_DIR} ${JNI_INCLUDE_DIRS})
+	target_link_libraries(JavaBlock ${JNI_LIBRARIES})
+	
+	list(APPEND FLOW_BUILT_BLOCKS JavaBlock)
+endif()

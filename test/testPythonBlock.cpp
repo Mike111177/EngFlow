@@ -3,12 +3,11 @@
 
 #include <Flow/FlowTypes.h>
 #include <Flow/FlowDocument.h>
-#include <Flow/CorePlugin.h>
 #include <Flow/blocks/codeblocks/PythonBlock.h>
 
 
 TEST_CASE("PythonBlock common block requirements") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto blockOpt = Flow::Block::create("PythonBlock");
 	SUBCASE("Block is registered") {
 		CHECK(blockOpt.has_value());
@@ -34,7 +33,7 @@ TEST_CASE("PythonBlock common block requirements") {
 }
 
 TEST_CASE("PythonBlock can run python") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
@@ -47,7 +46,7 @@ def hello_python():
 }
 
 TEST_CASE("PythonBlock knows how many parameters to pass its function") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
@@ -72,7 +71,7 @@ def hello_python(param1, param2):
 }
 
 TEST_CASE("PythonBlock parameter test") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
@@ -98,7 +97,7 @@ def doubleNum(a):
 }
 
 TEST_CASE("PythonBlock can return tuple types") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
@@ -115,7 +114,7 @@ def testReturnTuples(p1, p2, p3):
 }
 
 TEST_CASE("PythonBlock can work with Dict types") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block = Flow::Block::create("PythonBlock").value();
 	auto ptr = block->logic();
 	auto pyLogic = dynamic_cast<Flow::PythonBlock*>(ptr);
@@ -134,7 +133,7 @@ def testReturnTuples(mydict):
 }
 
 TEST_CASE("PythonBlock saving/loading test") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto path = std::filesystem::temp_directory_path()/"TestFlowPythonDocument.efd";
 	// If the file already exist, this test would be pretty meaningless
 	if (std::filesystem::exists(path)) { try { std::filesystem::remove(path); } catch (...) {} }
@@ -172,7 +171,7 @@ def verify():
 }
 
 TEST_CASE("Multiple PythonBlocks can communicate ") {
-	initCoreComponents();
+	Flow::PythonBlock::reg();
 	auto block1 = Flow::Block::create("PythonBlock").value();
 	auto ptr1 = block1->logic();
 	auto pyLogic1 = dynamic_cast<Flow::PythonBlock*>(ptr1);

@@ -8,6 +8,7 @@ namespace Flow{
 	protected:
 		virtual FlowVar run(FlowVar args) override;
 	public:
+		static void reg();
 		static const std::string LogicType;
 		LuaBlock(std::weak_ptr<Block> p);
 		virtual std::vector<std::string> nparams() override;

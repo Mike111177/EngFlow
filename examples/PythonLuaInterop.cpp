@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include <Flow/CorePlugin.h>
 #include <Flow/blocks/codeblocks/LuaBlock.h>
 #include <Flow/blocks/codeblocks/PythonBlock.h>
 
 int main(){
 	//Init block types
-	initCoreComponents();
+	Flow::PythonBlock::reg();
+	Flow::LuaBlock::reg();
 
 	//Create Blocks
 	auto pyblock1 = Flow::Block::create("PythonBlock").value();

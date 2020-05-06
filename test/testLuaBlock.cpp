@@ -2,13 +2,12 @@
 
 #include <filesystem>
 
-#include <Flow/CorePlugin.h>
 #include <Flow/FlowDocument.h>
 #include <Flow/blocks/codeblocks/LuaBlock.h>
 
 
 TEST_CASE("LuaBlock common block requirements") {
-	initCoreComponents();
+	Flow::LuaBlock::reg();
 	auto blockOpt = Flow::Block::create("LuaBlock");
 	SUBCASE("Block is registered") {
 		CHECK(blockOpt.has_value());
@@ -31,7 +30,7 @@ TEST_CASE("LuaBlock common block requirements") {
 }
 
 TEST_CASE("LuaBlock can run Lua") {
-	initCoreComponents();
+	Flow::LuaBlock::reg();
 	auto block = Flow::Block::create("LuaBlock").value();
 	auto ptr = block->logic();
 	auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
@@ -48,7 +47,7 @@ return hellolua
 }
 
 TEST_CASE("LuaBlock parameter test") {
-	initCoreComponents();
+	Flow::LuaBlock::reg();
 	auto block = Flow::Block::create("LuaBlock").value();
 	auto ptr = block->logic();
 	auto luaLogic = dynamic_cast<Flow::LuaBlock*>(ptr);
@@ -78,7 +77,7 @@ return doubleNum
 }
 
 TEST_CASE("LuaBlock saving/loading test") {
-	initCoreComponents();
+	Flow::LuaBlock::reg();
 	auto path = std::filesystem::temp_directory_path() / "TestFlowLuaDocument.efd";
 	// If the file already exist, this test would be pretty meaningless
 	if (std::filesystem::exists(path)) { try { std::filesystem::remove(path); } catch (...) {} }
@@ -118,7 +117,7 @@ return verify
 }
 
 TEST_CASE("Multiple LuaBlocks can communicate ") {
-	initCoreComponents();
+	Flow::LuaBlock::reg();
 	auto block1 = Flow::Block::create("LuaBlock").value();
 	auto ptr1 = block1->logic();
 	auto luaLogic1 = dynamic_cast<Flow::LuaBlock*>(ptr1);

@@ -76,6 +76,7 @@ struct Flow::LuaBlock::IMPL {
 Flow::LuaBlock::LuaBlock(std::weak_ptr<Block> p) : AbstractCodeBlock(p), impl(new IMPL) {sourceExt = ".lua";}
 std::vector<std::string> Flow::LuaBlock::nparams(){return impl->nparams();}
 Flow::FlowVar Flow::LuaBlock::run(FlowVar args) {return impl->run(args);}
+void Flow::LuaBlock::reg() { Block::registerLogic<LuaBlock>(); }
 bool Flow::LuaBlock::precompile() { return impl->precompile(source); }
 Flow::LuaBlock::~LuaBlock() {}
 

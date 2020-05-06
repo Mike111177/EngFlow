@@ -25,13 +25,20 @@ set(TEST_LIBS Flow)
 #Determine Additional Availible Tests
 if (FLOW_BUILD_LUABLOCK) #LuaBlock
     list(APPEND TEST_SOURCES testLuaBlock.cpp)
-        list(APPEND TEST_LIBS LuaBlock)
+    list(APPEND TEST_LIBS LuaBlock)
 endif()
 
 #Determine Additional Availible Tests
 if (FLOW_BUILD_PYTHONBLOCK) #LuaBlock
     list(APPEND TEST_SOURCES testPythonBlock.cpp)
     list(APPEND TEST_LIBS PythonBlock)
+endif()
+
+#Determine Additional Availible Tests
+if (FLOW_BUILD_JAVABLOCK) #LuaBlock
+    list(APPEND TEST_SOURCES testJavaBlock.cpp)
+    list(APPEND TEST_LIBS JavaBlock)
+    add_compile_definitions(JAVAC_LOC="${JAVA_HOME}/bin/javac.exe")
 endif()
 
 add_executable(FlowTest ${TEST_SOURCES})
