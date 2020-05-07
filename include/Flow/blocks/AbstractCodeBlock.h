@@ -3,7 +3,7 @@
 
 #include <Flow/FlowTypes.h>
 #include <Flow/Block.h>
-#include <Flow/Util.h>
+#include <Util/Pointers.h>
 
 namespace Flow{
 	class AbstractCodeBlock : public Block::Logic {

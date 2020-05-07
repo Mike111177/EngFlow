@@ -35,7 +35,7 @@ if (${FLOW_BUILD_JAVABLOCK})
 
 	add_library(JavaBlock JavaBlock.cpp ${FLOW_CODEBLOCKS_HEADER_DIR}/JavaBlock.h)
 	target_include_directories(JavaBlock PRIVATE ${FLOW_INCLUDE_DIR} ${JNI_INCLUDE_DIRS})
-	target_link_libraries(JavaBlock ${JNI_LIBRARIES})
+	target_link_libraries(JavaBlock FlowUtil ${JNI_LIBRARIES})
 	
 	list(APPEND FLOW_BUILT_BLOCKS JavaBlock)
 endif()

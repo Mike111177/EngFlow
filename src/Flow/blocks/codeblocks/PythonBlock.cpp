@@ -8,7 +8,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <Flow/Util.h>
+#include <Util/Pointers.h>
 #include <Flow/blocks/codeblocks/PythonBlock.h>
 
 const std::string Flow::PythonBlock::LogicType = "PythonBlock";
