@@ -1,15 +1,12 @@
 #include <iostream>
 #include <stdexcept>
-#include <cstdlib>
-#include <random>
-#include <functional> 
 #include <algorithm> 
-#include <filesystem>
 #include <fstream>
 
 #include <jni.h>
 
 #include <Util/TempFiles.h>
+#include <Util/SecureSystem.h>
 #include <Flow/blocks/codeblocks/JavaBlock.h>
 
 const std::string Flow::JavaBlock::LogicType = "JavaBlock";
@@ -26,15 +23,27 @@ struct Flow::JavaBlock::IMPL {
 	}
 	bool precompile(std::string & source) { 
 		if (!javacLocSet) throw std::runtime_error("JavacLoc not set!");
-		//Save File
+		//Create Temp Dir
 		TempDir temp;
-		auto sourceFileName = temp / "source.java";
+
+		//Create Source File
+		//Ex... %Temp%/4j783jy7f3jy879/source.java
+		auto sourceFileName = temp / "source.java"; 
 		std::ofstream sourceFile(sourceFileName);
 		sourceFile << source;
 		sourceFile.close();
+
 		//Compile File
-		auto command = javacLoc + " " + sourceFileName.string();
-		system(command.c_str());
+		//This is not throwing, so this thinks its there...
+		if (!std::filesystem::exists(sourceFileName)) throw "I can't see the file"; 
+		
+        //If I smack a breakpoint here and go to the temp folder, source.java definitley exist
+		//If I then wait like 5-10 seconds before resuming it works sometimes......
+
+		// Essentially runs "javac.exe source.java"
+		// Will probably fail due to not finding the file
+		secsystem(javacLoc, { sourceFileName.string() }); 
+
 		//Load Bytecode
 		for (auto& p : temp) {
 			if (p.is_regular_file() && p.path().extension() == ".class") {
@@ -42,7 +51,7 @@ struct Flow::JavaBlock::IMPL {
 			}
 		}
 		//Reflect
-		return false; 
+		return false; //Not fully implemented, don't allow execution
 	}
 };
 
