@@ -38,5 +38,5 @@ endif()
 # all listed variables are TRUE
 # -----------------------------------------------------
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(pugixml DEFAULT_MSG PUGIXML_LIBRARIES PUGIXML_INCLUDE_DIR)
+find_package_handle_standard_args(PugiXML DEFAULT_MSG PUGIXML_LIBRARIES PUGIXML_INCLUDE_DIR)
 mark_as_advanced(PUGIXML_INCLUDE_DIR PUGIXML_LIBRARIES)

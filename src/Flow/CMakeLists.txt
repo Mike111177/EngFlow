@@ -1,4 +1,4 @@
-find_package(pugixml REQUIRED)
+find_package(PugiXML REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(LibZip REQUIRED)
 
