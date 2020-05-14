@@ -9,6 +9,7 @@ file(GLOB_RECURSE HEADER_FILES ${FLOW_INCLUDE_DIR}/*.h)
 
 include_directories(${FLOW_INCLUDE_DIR})
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
+add_subdirectory(${PROJECT_SOURCE_DIR}/modules)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 	option(FLOW_BUILD_TESTING "Build Flow Testing Modules" ON)
