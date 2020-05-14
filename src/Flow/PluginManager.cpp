@@ -31,3 +31,6 @@ Flow::PluginHandle::PluginHandle(std::filesystem::path path) :
 }
 
 Flow::PluginHandle::~PluginHandle() {}
+
+Flow::IPlugin* Flow::PluginHandle::operator->() { return plugin; }
+Flow::IPlugin* Flow::PluginHandle::operator*() { return plugin; }

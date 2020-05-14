@@ -2,6 +2,9 @@
 #include <filesystem>
 namespace Flow {
 	class IPlugin {
+		IPlugin(IPlugin&) = delete;
+	protected:
+		IPlugin() = default;
 	public:
 		virtual void init() = 0;
 		virtual const char* name() = 0;
@@ -11,9 +14,13 @@ namespace Flow {
 		std::filesystem::path path;
 		PluginDLL* dll;
 		IPlugin* plugin;
+		PluginHandle(PluginHandle&) = delete;
+		PluginHandle() = delete;
 	public:
 		PluginHandle(std::filesystem::path path);
 		~PluginHandle();
-		IPlugin* operator->() { return plugin; }
+		IPlugin* operator->();
+		IPlugin* operator*();
+
 	};
 }
